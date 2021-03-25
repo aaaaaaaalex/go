@@ -24,6 +24,10 @@ import (
 	"time"
 )
 
+const (
+	DefaultIndexPage = "index.html"
+)
+
 // A Dir implements FileSystem using the native file system restricted to a
 // specific directory tree.
 //
@@ -583,9 +587,7 @@ func checkPreconditions(w ResponseWriter, r *Request, modtime time.Time) (done b
 }
 
 // name is '/'-separated, not filepath.Separator.
-func serveFile(w ResponseWriter, r *Request, fs FileSystem, name string, redirect bool) {
-	const indexPage = "/index.html"
-
+func serveFile(w ResponseWriter, r *Request, fs FileSystem, name string, indexPage string, redirect bool) {
 	// redirect .../index.html to .../
 	// can't use Redirect() because that would make the path absolute,
 	// which would be a problem running under StripPrefix
@@ -722,7 +724,7 @@ func ServeFile(w ResponseWriter, r *Request, name string) {
 		return
 	}
 	dir, file := filepath.Split(name)
-	serveFile(w, r, Dir(dir), file, false)
+	serveFile(w, r, Dir(dir), file, DefaultIndexPage, false)
 }
 
 func containsDotDot(v string) bool {
@@ -741,6 +743,7 @@ func isSlashRune(r rune) bool { return r == '/' || r == '\\' }
 
 type fileHandler struct {
 	root FileSystem
+	index string
 }
 
 type ioFS struct {
@@ -836,8 +839,13 @@ func FS(fsys fs.FS) FileSystem {
 //	http.Handle("/", http.FileServer(http.FS(fsys)))
 //
 func FileServer(root FileSystem) Handler {
-	return &fileHandler{root}
+	return &fileHandler{root, DefaultIndexPage}
 }
+
+func XFileServer(root FileSystem, index string) Handler {
+	return &fileHandler{root, index}
+}
+
 
 func (f *fileHandler) ServeHTTP(w ResponseWriter, r *Request) {
 	upath := r.URL.Path
@@ -845,8 +853,9 @@ func (f *fileHandler) ServeHTTP(w ResponseWriter, r *Request) {
 		upath = "/" + upath
 		r.URL.Path = upath
 	}
-	serveFile(w, r, f.root, path.Clean(upath), true)
+	serveFile(w, r, f.root, path.Clean(upath), f.index,  true)
 }
+
 
 // httpRange specifies the byte range to be sent to the client.
 type httpRange struct {

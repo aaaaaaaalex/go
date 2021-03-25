@@ -1107,7 +1107,7 @@ func TestServerFileStatError(t *testing.T) {
 	redirect := false
 	name := "file.txt"
 	fs := issue12991FS{}
-	ExportServeFile(rec, r, fs, name, redirect)
+	ExportServeFile(rec, r, fs, name, "index.html", redirect)
 	if body := rec.Body.String(); !strings.Contains(body, "403") || !strings.Contains(body, "Forbidden") {
 		t.Errorf("wanted 403 forbidden message; got: %s", body)
 	}
