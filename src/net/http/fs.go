@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	DefaultIndexPage = "index.html"
+	DefaultIndexPage = "/index.html"
 )
 
 // A Dir implements FileSystem using the native file system restricted to a
@@ -843,6 +843,9 @@ func FileServer(root FileSystem) Handler {
 }
 
 func XFileServer(root FileSystem, index string) Handler {
+	if !strings.HasPrefix(index, "/") {
+		index = "/"+index
+	}
 	return &fileHandler{root, index}
 }
 
